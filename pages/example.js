@@ -1,7 +1,8 @@
-import { gql, useQuery } from '@apollo/client';
-import * as MENUS from '../constants/menus';
-import { BlogInfoFragment } from '../fragments/GeneralSettings';
+import { gql, useQuery } from "@apollo/client";
+import * as MENUS from "../constants/menus";
+import { BlogInfoFragment } from "../fragments/GeneralSettings";
 import {
+  AuthenticatedView,
   Header,
   Hero,
   Footer,
@@ -9,16 +10,18 @@ import {
   Container,
   NavigationMenu,
   SEO,
-} from '../components';
-import { getNextStaticProps } from '@faustwp/core';
+} from "../components";
+import { getNextStaticProps, useAuth } from "@faustwp/core";
 
 export default function Page(props) {
+  const { isAuthenticated, isReady, loginUrl } = useAuth();
   const { data } = useQuery(Page.query, {
     variables: Page.variables(),
   });
   const title = props.title;
 
-  const { title: siteTitle, description: siteDescription } = data?.generalSettings;
+  const { title: siteTitle, description: siteDescription } =
+    data?.generalSettings;
   const primaryMenu = data?.headerMenuItems?.nodes ?? [];
   const footerMenu = data?.footerMenuItems?.nodes ?? [];
 
@@ -36,6 +39,19 @@ export default function Page(props) {
           <div className="text-center">
             <p>This page is utilizing the Next.js File based routes.</p>
             <code>pages/example.js</code>
+          </div>
+          <div>
+            {isReady ? (
+              isAuthenticated ? (
+                <AuthenticatedView />
+              ) : (
+                <p className="text-center">
+                  <a href={loginUrl}>Login</a>
+                </p>
+              )
+            ) : (
+              <p className="text-center">Checking authentication...</p>
+            )}
           </div>
         </Container>
       </Main>
@@ -70,10 +86,13 @@ Page.query = gql`
 Page.variables = () => {
   return {
     headerLocation: MENUS.PRIMARY_LOCATION,
-    footerLocation: MENUS.FOOTER_LOCATION
+    footerLocation: MENUS.FOOTER_LOCATION,
   };
 };
 
 export function getStaticProps(ctx) {
-  return getNextStaticProps(ctx, {Page, props: {title: 'File Page Example'}});
+  return getNextStaticProps(ctx, {
+    Page,
+    props: { title: "File Page Example" },
+  });
 }
